@@ -166,21 +166,57 @@ def render_simulator() -> None:
                     stroke: rgba(148, 163, 184, 0.18);
                 }
 
+                .panel-tag {
+                    font-size: 10px;
+                    font-weight: 700;
+                    fill: #ffffff;
+                }
+
                 .dose-cell {
-                    stroke: rgba(255, 255, 255, 0.16);
-                    stroke-width: 0.18;
+                    stroke: none;
                 }
 
                 .dose-crosshair {
                     stroke: rgba(255, 255, 255, 0.85);
                     stroke-width: 0.42;
                     stroke-dasharray: 1.2 1;
+                    opacity: 0;
                 }
 
                 .dose-marker {
                     fill: rgba(255, 255, 255, 0.92);
                     stroke: rgba(15, 23, 42, 0.22);
                     stroke-width: 0.2;
+                    opacity: 0;
+                }
+
+                .dose-axis-line {
+                    stroke: rgba(15, 23, 42, 0.48);
+                    stroke-width: 0.3;
+                }
+
+                .dose-axis-label,
+                .dose-tick,
+                .colorbar-label,
+                .profile-legend-label,
+                .annotation-text {
+                    font-size: 4px;
+                    fill: #102235;
+                }
+
+                .profile-legend-label,
+                .annotation-text {
+                    font-size: 3.8px;
+                }
+
+                .annotation-line {
+                    stroke: rgba(15, 23, 42, 0.62);
+                    stroke-width: 0.35;
+                }
+
+                .annotation-guide {
+                    stroke: rgba(15, 23, 42, 0.32);
+                    stroke-width: 0.3;
                 }
 
                 .profile-axis {
@@ -212,30 +248,6 @@ def render_simulator() -> None:
 
                 .profile-dot-delivered {
                     fill: #d14343;
-                }
-
-                .normalization-modes {
-                    display: flex;
-                    gap: 8px;
-                    flex-wrap: wrap;
-                    margin: 10px 0 12px;
-                }
-
-                .normalization-mode {
-                    border: 1px solid rgba(148, 163, 184, 0.26);
-                    background: #fffaf0;
-                    color: var(--muted);
-                    border-radius: 999px;
-                    padding: 7px 12px;
-                    font-size: 12px;
-                    font-weight: 700;
-                    cursor: pointer;
-                }
-
-                .normalization-mode.active {
-                    background: #c2410c;
-                    color: white;
-                    border-color: #c2410c;
                 }
 
                 .compare-stats {
@@ -434,6 +446,56 @@ def render_simulator() -> None:
                     </div>
                 </div>
 
+                <div class="controls">
+                    <div class="control">
+                        <label for="dose-slider">Dose Criteria (ΔD max)</label>
+                        <div class="control-row">
+                            <input id="dose-slider" type="range" min="1" max="5" step="0.5" value="3" />
+                            <output id="dose-output">3.0%</output>
+                        </div>
+                    </div>
+
+                    <div class="control">
+                        <label for="distance-slider">Distance Criteria (Δd max)</label>
+                        <div class="control-row">
+                            <input id="distance-slider" type="range" min="1" max="5" step="0.5" value="3" />
+                            <output id="distance-output">3.0 mm</output>
+                        </div>
+                    </div>
+
+                    <div class="control">
+                        <label for="mech-slider">Mechanical Perturbation</label>
+                        <div class="control-row">
+                            <input id="mech-slider" type="range" min="0.5" max="6.0" step="0.1" value="1.5" />
+                            <output id="mech-output">1.5x</output>
+                        </div>
+                    </div>
+
+                    <div class="control">
+                        <label for="sample-position-slider">Normalization Sample Position</label>
+                        <div class="control-row">
+                            <input id="sample-position-slider" type="range" min="-0.9" max="0.9" step="0.01" value="-0.78" />
+                            <output id="sample-position-output">-0.78 x</output>
+                        </div>
+                    </div>
+
+                    <div class="control">
+                        <label for="comparison-spatial-slider">Comparison Spatial Error</label>
+                        <div class="control-row">
+                            <input id="comparison-spatial-slider" type="range" min="0" max="5" step="0.1" value="0.8" />
+                            <output id="comparison-spatial-output">0.8 mm</output>
+                        </div>
+                    </div>
+
+                    <div class="control">
+                        <label for="comparison-dose-factor-slider">Comparison Dose Difference</label>
+                        <div class="control-row">
+                            <input id="comparison-dose-factor-slider" type="range" min="0.2" max="2.6" step="0.05" value="1.4" />
+                            <output id="comparison-dose-factor-output">1.40x ΔD</output>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="plots">
                     <div class="plot-card plot-ellipsoid">
                         <div class="plot-title">Acceptance Ellipsoid Bound</div>
@@ -471,61 +533,96 @@ def render_simulator() -> None:
 
                     <div class="plot-card wide plot-reference-dose">
                         <div class="plot-title">Reference 2D Dose Distribution</div>
-                        <div class="plot-subtitle">Static example beam profile with a broad high-dose core and softer penumbra.</div>
-                        <svg id="reference-dose-svg" viewBox="0 0 100 86" style="width:100%; height:320px; display:block;">
-                            <rect x="11" y="8" width="74" height="74" rx="4" class="dose-frame"></rect>
+                        <div class="plot-subtitle">Flat-top circular reference field with a sharp penumbra and a low-dose halo, matching the profile example.</div>
+                        <svg id="reference-dose-svg" viewBox="0 0 112 96" style="width:100%; height:320px; display:block;">
+                            <text x="15" y="13" class="panel-tag">(a)</text>
+                            <rect x="12" y="8" width="74" height="74" rx="0" class="dose-frame"></rect>
                             <g id="reference-dose-map"></g>
-                            <line x1="48" y1="8" x2="48" y2="82" class="dose-crosshair"></line>
-                            <line x1="11" y1="45" x2="85" y2="45" class="dose-crosshair"></line>
-                            <circle cx="48" cy="45" r="1.8" class="dose-marker"></circle>
-                            <text x="11" y="84" class="axis-text">-X</text>
-                            <text x="85" y="84" text-anchor="end" class="axis-text">+X</text>
-                            <text x="8" y="13" text-anchor="end" class="axis-text">+Y</text>
-                            <text x="8" y="81" text-anchor="end" class="axis-text">-Y</text>
+                            <line x1="12" y1="82" x2="86" y2="82" class="dose-axis-line"></line>
+                            <line x1="12" y1="8" x2="12" y2="82" class="dose-axis-line"></line>
+                            <text x="12" y="87" class="dose-tick">-10</text>
+                            <text x="30.5" y="87" text-anchor="middle" class="dose-tick">-5</text>
+                            <text x="49" y="87" text-anchor="middle" class="dose-tick">0</text>
+                            <text x="67.5" y="87" text-anchor="middle" class="dose-tick">5</text>
+                            <text x="86" y="87" text-anchor="end" class="dose-tick">10</text>
+                            <text x="8" y="12" text-anchor="end" class="dose-tick">-10</text>
+                            <text x="8" y="30.5" text-anchor="end" class="dose-tick">-5</text>
+                            <text x="8" y="49" text-anchor="end" class="dose-tick">0</text>
+                            <text x="8" y="67.5" text-anchor="end" class="dose-tick">5</text>
+                            <text x="8" y="82" text-anchor="end" class="dose-tick">10</text>
+                            <text x="49" y="93" text-anchor="middle" class="dose-axis-label">X (cm)</text>
+                            <text x="3" y="45" text-anchor="middle" transform="rotate(-90 3 45)" class="dose-axis-label">Y (cm)</text>
                         </svg>
                     </div>
 
                     <div class="plot-card wide plot-delivered-dose">
                         <div class="plot-title">Delivered 2D Dose Distribution</div>
-                        <div class="plot-subtitle">The example field shifts and warps with the same playback perturbations used in the gamma model.</div>
-                        <svg id="delivered-dose-svg" viewBox="0 0 100 86" style="width:100%; height:320px; display:block;">
-                            <rect x="11" y="8" width="74" height="74" rx="4" class="dose-frame"></rect>
+                        <div class="plot-subtitle">Evaluated field with a slightly lower plateau and shifted penumbra so the profile reproduces the reference-versus-evaluated comparison.</div>
+                        <svg id="delivered-dose-svg" viewBox="0 0 112 96" style="width:100%; height:320px; display:block;">
+                            <text x="15" y="13" class="panel-tag">(b)</text>
+                            <rect x="12" y="8" width="74" height="74" rx="0" class="dose-frame"></rect>
                             <g id="delivered-dose-map"></g>
-                            <line id="dose-crosshair-v" x1="48" y1="8" x2="48" y2="82" class="dose-crosshair"></line>
-                            <line id="dose-crosshair-h" x1="11" y1="45" x2="85" y2="45" class="dose-crosshair"></line>
-                            <circle id="dose-marker" cx="48" cy="45" r="1.8" class="dose-marker"></circle>
-                            <text x="11" y="84" class="axis-text">-X</text>
-                            <text x="85" y="84" text-anchor="end" class="axis-text">+X</text>
-                            <text x="8" y="13" text-anchor="end" class="axis-text">+Y</text>
-                            <text x="8" y="81" text-anchor="end" class="axis-text">-Y</text>
+                            <line x1="12" y1="82" x2="86" y2="82" class="dose-axis-line"></line>
+                            <line x1="12" y1="8" x2="12" y2="82" class="dose-axis-line"></line>
+                            <text x="12" y="87" class="dose-tick">-10</text>
+                            <text x="30.5" y="87" text-anchor="middle" class="dose-tick">-5</text>
+                            <text x="49" y="87" text-anchor="middle" class="dose-tick">0</text>
+                            <text x="67.5" y="87" text-anchor="middle" class="dose-tick">5</text>
+                            <text x="86" y="87" text-anchor="end" class="dose-tick">10</text>
+                            <text x="8" y="12" text-anchor="end" class="dose-tick">-10</text>
+                            <text x="8" y="30.5" text-anchor="end" class="dose-tick">-5</text>
+                            <text x="8" y="49" text-anchor="end" class="dose-tick">0</text>
+                            <text x="8" y="67.5" text-anchor="end" class="dose-tick">5</text>
+                            <text x="8" y="82" text-anchor="end" class="dose-tick">10</text>
+                            <text x="49" y="93" text-anchor="middle" class="dose-axis-label">X (cm)</text>
+                            <text x="3" y="45" text-anchor="middle" transform="rotate(-90 3 45)" class="dose-axis-label">Y (cm)</text>
                         </svg>
                     </div>
 
                     <div class="plot-card full plot-normalization">
                         <div class="plot-title">Global vs Local Gamma Normalization</div>
-                        <div class="plot-subtitle">Use the extra controls below to move the sampled point, add spatial error, and scale the dose difference so you can create pass-fail splits on demand.</div>
-                        <div class="normalization-modes">
-                            <button class="normalization-mode active" data-mode="hotspot">Penumbra Hotspot</button>
-                            <button class="normalization-mode" data-mode="broadened">Broadened Field</button>
-                            <button class="normalization-mode" data-mode="coldspot">Cold Shoulder</button>
-                        </div>
+                        <div class="plot-subtitle">Centerline profiles sampled from the same 2D reference and evaluated dose fields, shown in cGy with a flat-top beam and shifted penumbra.</div>
                         <div class="equation-block">
                             <div class="equation-title">Criteria Equations</div>
                             <div class="equation-text">Global: <em>&gamma;</em> = &radic;[(<span class="frac"><span class="frac-num"><em>&Delta;D</em></span><span class="frac-den"><em>D</em><sub>crit</sub></span></span>)<sup>2</sup> + (<span class="frac"><span class="frac-num"><em>&Delta;r</em></span><span class="frac-den"><em>r</em><sub>crit</sub></span></span>)<sup>2</sup>]</div>
                             <div class="equation-text">Local: <em>&gamma;</em> = &radic;[(<span class="frac"><span class="frac-num"><em>&Delta;D</em></span><span class="frac-den"><em>D</em><sub>crit</sub> &middot; <em>D</em><sub>ref,local</sub></span></span>)<sup>2</sup> + (<span class="frac"><span class="frac-num"><em>&Delta;r</em></span><span class="frac-den"><em>r</em><sub>crit</sub></span></span>)<sup>2</sup>]</div>
                         </div>
-                        <svg id="normalization-svg" viewBox="0 0 100 58" style="width:100%; height:220px; display:block;">
-                            <rect x="8" y="8" width="84" height="40" fill="rgba(15,23,42,0.02)" stroke="rgba(148,163,184,0.18)"></rect>
-                            <line x1="10" y1="42" x2="90" y2="42" class="profile-axis"></line>
-                            <line x1="10" y1="12" x2="10" y2="42" class="profile-axis"></line>
+                        <svg id="normalization-svg" viewBox="0 0 118 82" style="width:100%; height:260px; display:block;">
+                            <text x="18" y="12" class="annotation-text" style="font-weight:700;">(c)</text>
+                            <rect x="16" y="10" width="72" height="56" fill="rgba(15,23,42,0.02)" stroke="rgba(148,163,184,0.18)"></rect>
+                            <line x1="16" y1="66" x2="88" y2="66" class="profile-axis"></line>
+                            <line x1="16" y1="10" x2="16" y2="66" class="profile-axis"></line>
                             <path id="normalization-reference-path" class="profile-ref"></path>
                             <path id="normalization-delivered-path" class="profile-delivered"></path>
-                            <line id="normalization-sample-line" x1="50" y1="10" x2="50" y2="44" class="profile-sample-line"></line>
+                            <line id="normalization-sample-line" x1="50" y1="10" x2="50" y2="68" class="profile-sample-line"></line>
                             <circle id="normalization-reference-dot" cx="50" cy="24" r="1.4" class="profile-dot-ref"></circle>
                             <circle id="normalization-delivered-dot" cx="50" cy="28" r="1.4" class="profile-dot-delivered"></circle>
-                            <text x="10" y="48" class="axis-text">Low-dose edge</text>
-                            <text x="90" y="48" text-anchor="end" class="axis-text">High-dose core</text>
-                            <text x="10" y="10" class="axis-text">100%</text>
+                            <line x1="86" y1="15" x2="92" y2="15" class="profile-ref"></line>
+                            <text x="93" y="16.5" class="profile-legend-label">Reference</text>
+                            <line x1="86" y1="20" x2="92" y2="20" class="profile-delivered"></line>
+                            <text x="93" y="21.5" class="profile-legend-label">Evaluated</text>
+                            <line id="left-dose-guide-ref" x1="24" y1="58" x2="24" y2="66" class="annotation-line"></line>
+                            <line id="left-dose-guide-eval" x1="29" y1="58" x2="29" y2="66" class="annotation-line"></line>
+                            <text id="left-dose-label" x="26.5" y="55" text-anchor="middle" class="annotation-text">10 cGy / 8 cGy</text>
+                            <line id="plateau-guide-ref" x1="52" y1="18" x2="52" y2="10" class="annotation-line"></line>
+                            <line id="plateau-guide-eval" x1="58" y1="20" x2="58" y2="10" class="annotation-line"></line>
+                            <text id="plateau-dose-label" x="55" y="8" text-anchor="middle" class="annotation-text">210 cGy / 200 cGy</text>
+                            <line id="edge-guide-ref" x1="74" y1="46" x2="74" y2="66" class="annotation-guide"></line>
+                            <line id="edge-guide-eval" x1="78" y1="44" x2="78" y2="66" class="annotation-guide"></line>
+                            <text id="edge-shift-label" x="76" y="42" text-anchor="middle" class="annotation-text">4.0 mm edge shift</text>
+                            <text x="16" y="70.5" class="dose-tick">-10</text>
+                            <text x="34" y="70.5" text-anchor="middle" class="dose-tick">-5</text>
+                            <text x="52" y="70.5" text-anchor="middle" class="dose-tick">0</text>
+                            <text x="70" y="70.5" text-anchor="middle" class="dose-tick">5</text>
+                            <text x="88" y="70.5" text-anchor="end" class="dose-tick">10</text>
+                            <text x="12.5" y="66" text-anchor="end" class="dose-tick">0</text>
+                            <text x="12.5" y="54.8" text-anchor="end" class="dose-tick">50</text>
+                            <text x="12.5" y="43.6" text-anchor="end" class="dose-tick">100</text>
+                            <text x="12.5" y="32.4" text-anchor="end" class="dose-tick">150</text>
+                            <text x="12.5" y="21.2" text-anchor="end" class="dose-tick">200</text>
+                            <text x="12.5" y="10" text-anchor="end" class="dose-tick">250</text>
+                            <text x="52" y="79" text-anchor="middle" class="dose-axis-label">X (cm)</text>
+                            <text x="4" y="38" text-anchor="middle" transform="rotate(-90 4 38)" class="dose-axis-label">Dose (cGy)</text>
                         </svg>
                         <div class="compare-stats">
                             <div class="compare-stat">
@@ -583,56 +680,6 @@ def render_simulator() -> None:
                     </div>
                 </div>
 
-                <div class="controls">
-                    <div class="control">
-                        <label for="dose-slider">Dose Criteria (ΔD max)</label>
-                        <div class="control-row">
-                            <input id="dose-slider" type="range" min="1" max="5" step="0.5" value="3" />
-                            <output id="dose-output">3.0%</output>
-                        </div>
-                    </div>
-
-                    <div class="control">
-                        <label for="distance-slider">Distance Criteria (Δd max)</label>
-                        <div class="control-row">
-                            <input id="distance-slider" type="range" min="1" max="5" step="0.5" value="3" />
-                            <output id="distance-output">3.0 mm</output>
-                        </div>
-                    </div>
-
-                    <div class="control">
-                        <label for="mech-slider">Mechanical Perturbation</label>
-                        <div class="control-row">
-                            <input id="mech-slider" type="range" min="0.5" max="4.0" step="0.1" value="1.5" />
-                            <output id="mech-output">1.5x</output>
-                        </div>
-                    </div>
-
-                    <div class="control">
-                        <label for="sample-position-slider">Normalization Sample Position</label>
-                        <div class="control-row">
-                            <input id="sample-position-slider" type="range" min="-0.9" max="0.9" step="0.01" value="-0.78" />
-                            <output id="sample-position-output">-0.78 x</output>
-                        </div>
-                    </div>
-
-                    <div class="control">
-                        <label for="comparison-spatial-slider">Comparison Spatial Error</label>
-                        <div class="control-row">
-                            <input id="comparison-spatial-slider" type="range" min="0" max="3" step="0.1" value="0" />
-                            <output id="comparison-spatial-output">0.0 mm</output>
-                        </div>
-                    </div>
-
-                    <div class="control">
-                        <label for="comparison-dose-factor-slider">Comparison Dose Difference</label>
-                        <div class="control-row">
-                            <input id="comparison-dose-factor-slider" type="range" min="0.1" max="1.6" step="0.05" value="0.9" />
-                            <output id="comparison-dose-factor-output">0.90x ΔD</output>
-                        </div>
-                    </div>
-                </div>
-
                 <div id="caption" class="caption"></div>
             </div>
 
@@ -645,7 +692,6 @@ def render_simulator() -> None:
                 const samplePositionSlider = document.getElementById('sample-position-slider');
                 const comparisonSpatialSlider = document.getElementById('comparison-spatial-slider');
                 const comparisonDoseFactorSlider = document.getElementById('comparison-dose-factor-slider');
-                const normalizationModes = Array.from(document.querySelectorAll('.normalization-mode'));
                 const doseOutput = document.getElementById('dose-output');
                 const distanceOutput = document.getElementById('distance-output');
                 const mechOutput = document.getElementById('mech-output');
@@ -677,6 +723,15 @@ def render_simulator() -> None:
                 const normalizationSampleLine = document.getElementById('normalization-sample-line');
                 const normalizationReferenceDot = document.getElementById('normalization-reference-dot');
                 const normalizationDeliveredDot = document.getElementById('normalization-delivered-dot');
+                const leftDoseGuideRef = document.getElementById('left-dose-guide-ref');
+                const leftDoseGuideEval = document.getElementById('left-dose-guide-eval');
+                const leftDoseLabel = document.getElementById('left-dose-label');
+                const plateauGuideRef = document.getElementById('plateau-guide-ref');
+                const plateauGuideEval = document.getElementById('plateau-guide-eval');
+                const plateauDoseLabel = document.getElementById('plateau-dose-label');
+                const edgeGuideRef = document.getElementById('edge-guide-ref');
+                const edgeGuideEval = document.getElementById('edge-guide-eval');
+                const edgeShiftLabel = document.getElementById('edge-shift-label');
                 const samplePosition = document.getElementById('sample-position');
                 const localRefDose = document.getElementById('local-ref-dose');
                 const sampleSpatialTerm = document.getElementById('sample-spatial-term');
@@ -688,12 +743,13 @@ def render_simulator() -> None:
                 const globalLocalGamma = document.getElementById('global-local-gamma');
 
                 const timeAxis = Array.from({ length: 201 }, (_, index) => (10 * index) / 200);
-                const doseGridSize = 18;
+                const doseGridSize = 72;
                 const lowDoseFloorPct = 1;
+                const doseScaleCgy = 2.1;
                 let currentTime = 0;
                 let isPlaying = false;
                 let lastFrame = null;
-                let normalizationMode = 'hotspot';
+                const normalizationMode = 'hotspot';
                 let logWaveProfile = null;
                 const ellipsoidCenter = { x: 46, y: 44 };
                 const projectionBasis = {
@@ -710,18 +766,34 @@ def render_simulator() -> None:
                     return Math.round(start + (end - start) * weight);
                 }
 
-                function heatColor(value) {
+                function heatColorComponents(value) {
                     const clamped = clamp(value, 0, 1);
                     if (clamped < 0.33) {
                         const weight = clamped / 0.33;
-                        return `rgb(${mixChannel(9, 38, weight)}, ${mixChannel(45, 126, weight)}, ${mixChannel(99, 173, weight)})`;
+                        return [mixChannel(9, 38, weight), mixChannel(45, 126, weight), mixChannel(99, 173, weight)];
                     }
                     if (clamped < 0.66) {
                         const weight = (clamped - 0.33) / 0.33;
-                        return `rgb(${mixChannel(38, 244, weight)}, ${mixChannel(126, 186, weight)}, ${mixChannel(173, 93, weight)})`;
+                        return [mixChannel(38, 244, weight), mixChannel(126, 186, weight), mixChannel(173, 93, weight)];
                     }
                     const weight = (clamped - 0.66) / 0.34;
-                    return `rgb(${mixChannel(244, 210, weight)}, ${mixChannel(186, 69, weight)}, ${mixChannel(93, 55, weight)})`;
+                    return [mixChannel(244, 210, weight), mixChannel(186, 69, weight), mixChannel(93, 55, weight)];
+                }
+
+                function heatColor(value) {
+                    const [red, green, blue] = heatColorComponents(value);
+                    return `rgb(${red}, ${green}, ${blue})`;
+                }
+
+                function normalizationReferenceDosePercent(normalizedX, normalizedY) {
+                    const radius = Math.hypot(normalizedX, normalizedY);
+                    const core = Math.exp(-Math.pow(radius / 0.54, 12));
+                    const halo = 0.11 * Math.exp(-Math.pow(radius / 0.82, 2.4));
+                    return clamp((0.93 * core + halo) * 100, 0, 100);
+                }
+
+                function doseCgyFromPercent(dosePct) {
+                    return dosePct * doseScaleCgy;
                 }
 
                 function doseIntensityAt(normalizedX, normalizedY, time, delivered) {
@@ -778,9 +850,10 @@ def render_simulator() -> None:
                 }
 
                 function profileSvgPoint(normalizedX, dosePct) {
+                    const doseCgy = doseCgyFromPercent(dosePct);
                     return {
-                        x: 10 + ((normalizedX + 1) / 2) * 80,
-                        y: 42 - clamp(dosePct, 0, 100) * 0.28,
+                        x: 16 + ((normalizedX + 1) / 2) * 72,
+                        y: 66 - (clamp(doseCgy, 0, 250) / 250) * 56,
                     };
                 }
 
@@ -795,60 +868,157 @@ def render_simulator() -> None:
                     return points.join(' ');
                 }
 
-                function buildNormalizationDeliveredProfile(sampleXNormalized, doseDiffPct) {
-                    const shift = Number(comparisonSpatialSlider.value) * 0.045;
-                    const deliveredAt = (normalizedX) => {
-                        const shiftedX = normalizedX - shift;
-                        const reference = dosePercentAt(shiftedX, 0, 0, false);
-                        const gaussian = Math.exp(-((normalizedX - sampleXNormalized) ** 2) / 0.018);
+                function createNormalizationDoseSampler(sampleXNormalized, doseDiffPct, options = {}) {
+                    const applyEdgeBlur = options.applyEdgeBlur ?? true;
+                    const shift = Number(comparisonSpatialSlider.value) * 0.01;
+                    const relativeScale = doseDiffPct / Math.max(Number(doseSlider.value), 0.1);
+                    const mechScale = Number(mechSlider.value);
+                    const edgeSlopeStrength = 0.028 + Math.max(0, mechScale - 1) * 0.016;
+                    return (normalizedX, normalizedY, delivered) => {
+                        if (!delivered) {
+                            return normalizationReferenceDosePercent(normalizedX, normalizedY);
+                        }
+
+                        const shiftedX = normalizedX + shift;
+                        const shiftedY = normalizedY;
+                        const shiftedRadius = Math.hypot(shiftedX, shiftedY);
+                        const edgeWeight = applyEdgeBlur ? Math.exp(-((shiftedRadius - 0.5) ** 2) / 0.04) : 0;
+                        let adjustedX = shiftedX;
+                        let adjustedY = shiftedY;
+
+                        if (shiftedRadius > 1e-6 && edgeWeight > 1e-6) {
+                            const edgeSlopeScale = 1 + edgeSlopeStrength * 12 * edgeWeight;
+                            const adjustedRadius = 0.5 + (shiftedRadius - 0.5) / edgeSlopeScale;
+                            const radiusScale = adjustedRadius / shiftedRadius;
+                            adjustedX = shiftedX * radiusScale;
+                            adjustedY = shiftedY * radiusScale;
+                        }
+
+                        const reference = normalizationReferenceDosePercent(adjustedX, adjustedY);
+
+                        const centerWeight = Math.exp(-((shiftedX ** 2) / 0.16 + (shiftedY ** 2) / 0.16));
+                        const entranceWeight = Math.exp(-(((shiftedX + 0.76) ** 2) / 0.03 + (shiftedY ** 2) / 0.07));
+                        const exitWeight = Math.exp(-(((shiftedX - 0.48) ** 2) / 0.028 + (shiftedY ** 2) / 0.05));
+                        const shoulderWeight = Math.exp(-(((shiftedX - sampleXNormalized) ** 2) / 0.022 + (shiftedY ** 2) / 0.042));
+                        let dose = reference - 1.1 * doseDiffPct * centerWeight - 0.22 * doseDiffPct * entranceWeight - 0.35 * doseDiffPct * exitWeight;
 
                         if (normalizationMode === 'broadened') {
-                            const broadLift = 0.75 * doseDiffPct * Math.exp(-((normalizedX - sampleXNormalized) ** 2) / 0.16);
-                            const shoulderLift = 0.3 * doseDiffPct * Math.exp(-((normalizedX - 0.15) ** 2) / 0.08);
-                            return clamp(reference * 1.06 + broadLift + shoulderLift, 0, 100);
+                            const broadenedReference = normalizationReferenceDosePercent(adjustedX - shift * 0.6, adjustedY);
+                            const shoulderLift = 0.35 * doseDiffPct * Math.exp(-(((normalizedX - 0.24) ** 2) / 0.055 + ((normalizedY + 0.02) ** 2) / 0.1));
+                            dose = broadenedReference - 0.7 * doseDiffPct * centerWeight + shoulderLift;
                         }
 
                         if (normalizationMode === 'coldspot') {
-                            const dip = 0.95 * doseDiffPct * Math.exp(-((normalizedX - sampleXNormalized) ** 2) / 0.02);
-                            const distalDrop = 0.35 * doseDiffPct * Math.exp(-((normalizedX + 0.12) ** 2) / 0.06);
-                            return clamp(reference - dip - distalDrop + 0.12 * doseDiffPct * gaussian, 0, 100);
+                            const valley = Math.exp(-(((shiftedX + 0.34) ** 2) / 0.02 + (shiftedY ** 2) / 0.04));
+                            dose -= 0.55 * doseDiffPct * valley;
+                        } else if (normalizationMode === 'hotspot') {
+                            dose += 0.28 * doseDiffPct * shoulderWeight;
                         }
 
-                        const hotspot = doseDiffPct * gaussian;
-                        const trailingShoulder = 0.35 * doseDiffPct * Math.exp(-((normalizedX - (sampleXNormalized + 0.1)) ** 2) / 0.05);
-                        return clamp(reference + hotspot + trailingShoulder, 0, 100);
+                        dose -= relativeScale * 0.8;
+                        return clamp(dose, 0, 100);
                     };
+                }
 
-                    const sampledDosePct = deliveredAt(sampleXNormalized);
-                    return {
-                        deliveredAt,
-                        sampledDosePct,
-                        effectiveDoseDiffPct: sampledDosePct - dosePercentAt(sampleXNormalized, 0, 0, false),
+                function createAnimatedDeliveredDoseSampler(time, sampleXNormalized, doseDiffPct) {
+                    const baseSampler = createNormalizationDoseSampler(sampleXNormalized, doseDiffPct, { applyEdgeBlur: false });
+                    const shiftX = lateralSignal(time) * 0.028;
+                    const shiftY = positionSignal(time) * 0.02;
+                    const scaleX = 1 + doseSignal(time) * 0.006;
+                    const scaleY = 1 - doseSignal(time) * 0.004;
+                    return (normalizedX, normalizedY) => {
+                        const animatedX = (normalizedX - shiftX) / scaleX;
+                        const animatedY = (normalizedY - shiftY) / scaleY;
+                        const baseDose = baseSampler(animatedX, animatedY, true);
+                        const shimmer = 1.4 * Math.sin(4.2 * animatedX + time * 0.85) * Math.cos(3.6 * animatedY - time * 0.55);
+                        return clamp(baseDose + shimmer, 0, 100);
                     };
+                }
+
+                function findProfileDoseCrossing(profileAt, targetDosePct, startX, endX) {
+                    const steps = 160;
+                    let previousX = startX;
+                    let previousValue = profileAt(previousX) - targetDosePct;
+                    for (let step = 1; step <= steps; step += 1) {
+                        const currentX = startX + ((endX - startX) * step) / steps;
+                        const currentValue = profileAt(currentX) - targetDosePct;
+                        if ((previousValue <= 0 && currentValue >= 0) || (previousValue >= 0 && currentValue <= 0)) {
+                            const ratio = previousValue === currentValue ? 0 : previousValue / (previousValue - currentValue);
+                            return previousX + (currentX - previousX) * ratio;
+                        }
+                        previousX = currentX;
+                        previousValue = currentValue;
+                    }
+                    return endX;
                 }
 
                 function updateNormalizationComparison() {
                     const sampleXNormalized = Number(samplePositionSlider.value);
-                    const referenceDosePct = dosePercentAt(sampleXNormalized, 0, 0, false);
+                    const referenceDosePct = normalizationReferenceDosePercent(sampleXNormalized, 0);
                     const spatialYDev = Number(comparisonSpatialSlider.value);
                     const spatialZDev = 0;
                     const doseDiffPct = Number(doseSlider.value) * Number(comparisonDoseFactorSlider.value);
-                    const deliveredProfile = buildNormalizationDeliveredProfile(sampleXNormalized, doseDiffPct);
-                    const deliveredDosePct = deliveredProfile.sampledDosePct;
-                    const effectiveDoseDiffPct = deliveredProfile.effectiveDoseDiffPct;
+                    const normalizationDoseAt = createNormalizationDoseSampler(sampleXNormalized, doseDiffPct);
+                    const deliveredDosePct = normalizationDoseAt(sampleXNormalized, 0, true);
+                    const effectiveDoseDiffPct = deliveredDosePct - referenceDosePct;
                     const globalResult = gammaIndexForNormalization(effectiveDoseDiffPct, spatialYDev, spatialZDev, referenceDosePct, 'global');
                     const localResult = gammaIndexForNormalization(effectiveDoseDiffPct, spatialYDev, spatialZDev, referenceDosePct, 'local');
                     const refPoint = profileSvgPoint(sampleXNormalized, referenceDosePct);
                     const deliveredPoint = profileSvgPoint(sampleXNormalized, deliveredDosePct);
+                    const leftRefX = -0.78;
+                    const leftEvalX = -0.72;
+                    const leftRefDosePct = normalizationDoseAt(leftRefX, 0, false);
+                    const leftEvalDosePct = normalizationDoseAt(leftEvalX, 0, true);
+                    const leftRefPoint = profileSvgPoint(leftRefX, leftRefDosePct);
+                    const leftEvalPoint = profileSvgPoint(leftEvalX, leftEvalDosePct);
+                    const plateauRefPoint = profileSvgPoint(0, normalizationDoseAt(0, 0, false));
+                    const plateauEvalPoint = profileSvgPoint(0, normalizationDoseAt(0, 0, true));
+                    const edgeTargetDosePct = 4.5;
+                    const edgeRefX = findProfileDoseCrossing((normalizedX) => normalizationDoseAt(normalizedX, 0, false), edgeTargetDosePct, 0.15, 0.95);
+                    const edgeEvalX = findProfileDoseCrossing((normalizedX) => normalizationDoseAt(normalizedX, 0, true), edgeTargetDosePct, 0.15, 0.95);
+                    const edgeRefPoint = profileSvgPoint(edgeRefX, edgeTargetDosePct);
+                    const edgeEvalPoint = profileSvgPoint(edgeEvalX, edgeTargetDosePct);
+                    const edgeShiftMm = Math.abs(edgeEvalX - edgeRefX) * 100;
 
-                    normalizationReferencePath.setAttribute('d', buildNormalizationProfilePath((normalizedX) => dosePercentAt(normalizedX, 0, 0, false)));
-                    normalizationDeliveredPath.setAttribute('d', buildNormalizationProfilePath(deliveredProfile.deliveredAt));
+                    normalizationReferencePath.setAttribute('d', buildNormalizationProfilePath((normalizedX) => normalizationDoseAt(normalizedX, 0, false)));
+                    normalizationDeliveredPath.setAttribute('d', buildNormalizationProfilePath((normalizedX) => normalizationDoseAt(normalizedX, 0, true)));
                     normalizationSampleLine.setAttribute('x1', refPoint.x.toFixed(2));
                     normalizationSampleLine.setAttribute('x2', refPoint.x.toFixed(2));
                     normalizationReferenceDot.setAttribute('cx', refPoint.x.toFixed(2));
                     normalizationReferenceDot.setAttribute('cy', refPoint.y.toFixed(2));
                     normalizationDeliveredDot.setAttribute('cx', deliveredPoint.x.toFixed(2));
                     normalizationDeliveredDot.setAttribute('cy', deliveredPoint.y.toFixed(2));
+                    leftDoseGuideRef.setAttribute('x1', leftRefPoint.x.toFixed(2));
+                    leftDoseGuideRef.setAttribute('x2', leftRefPoint.x.toFixed(2));
+                    leftDoseGuideRef.setAttribute('y1', leftRefPoint.y.toFixed(2));
+                    leftDoseGuideRef.setAttribute('y2', '66');
+                    leftDoseGuideEval.setAttribute('x1', leftEvalPoint.x.toFixed(2));
+                    leftDoseGuideEval.setAttribute('x2', leftEvalPoint.x.toFixed(2));
+                    leftDoseGuideEval.setAttribute('y1', leftEvalPoint.y.toFixed(2));
+                    leftDoseGuideEval.setAttribute('y2', '66');
+                    leftDoseLabel.setAttribute('x', ((leftRefPoint.x + leftEvalPoint.x) / 2).toFixed(2));
+                    leftDoseLabel.setAttribute('y', (Math.min(leftRefPoint.y, leftEvalPoint.y) - 4).toFixed(2));
+                    leftDoseLabel.textContent = `${doseCgyFromPercent(leftRefDosePct).toFixed(0)} cGy / ${doseCgyFromPercent(leftEvalDosePct).toFixed(0)} cGy`;
+                    plateauGuideRef.setAttribute('x1', plateauRefPoint.x.toFixed(2));
+                    plateauGuideRef.setAttribute('x2', plateauRefPoint.x.toFixed(2));
+                    plateauGuideRef.setAttribute('y1', plateauRefPoint.y.toFixed(2));
+                    plateauGuideRef.setAttribute('y2', '10');
+                    plateauGuideEval.setAttribute('x1', plateauEvalPoint.x.toFixed(2));
+                    plateauGuideEval.setAttribute('x2', plateauEvalPoint.x.toFixed(2));
+                    plateauGuideEval.setAttribute('y1', plateauEvalPoint.y.toFixed(2));
+                    plateauGuideEval.setAttribute('y2', '10');
+                    plateauDoseLabel.textContent = `${doseCgyFromPercent(normalizationDoseAt(0, 0, false)).toFixed(0)} cGy / ${doseCgyFromPercent(normalizationDoseAt(0, 0, true)).toFixed(0)} cGy`;
+                    edgeGuideRef.setAttribute('x1', edgeRefPoint.x.toFixed(2));
+                    edgeGuideRef.setAttribute('x2', edgeRefPoint.x.toFixed(2));
+                    edgeGuideRef.setAttribute('y1', edgeRefPoint.y.toFixed(2));
+                    edgeGuideRef.setAttribute('y2', '66');
+                    edgeGuideEval.setAttribute('x1', edgeEvalPoint.x.toFixed(2));
+                    edgeGuideEval.setAttribute('x2', edgeEvalPoint.x.toFixed(2));
+                    edgeGuideEval.setAttribute('y1', edgeEvalPoint.y.toFixed(2));
+                    edgeGuideEval.setAttribute('y2', '66');
+                    edgeShiftLabel.setAttribute('x', ((edgeRefPoint.x + edgeEvalPoint.x) / 2).toFixed(2));
+                    edgeShiftLabel.setAttribute('y', (Math.min(edgeRefPoint.y, edgeEvalPoint.y) - 3.5).toFixed(2));
+                    edgeShiftLabel.textContent = `${edgeShiftMm.toFixed(1)} mm edge shift`;
 
                     samplePosition.textContent = `${sampleXNormalized.toFixed(2)} x`;
                     samplePositionOutput.textContent = `${sampleXNormalized.toFixed(2)} x`;
@@ -867,34 +1037,39 @@ def render_simulator() -> None:
                     globalLocalGamma.style.color = '#111827';
                 }
 
-                function buildDoseMapMarkup(time, delivered) {
-                    const cellSize = 74 / doseGridSize;
-                    let markup = '';
-                    for (let row = 0; row < doseGridSize; row += 1) {
-                        for (let col = 0; col < doseGridSize; col += 1) {
-                            const x = 11 + col * cellSize;
-                            const y = 8 + row * cellSize;
-                            const normalizedX = ((col + 0.5) / doseGridSize) * 2 - 1;
-                            const normalizedY = 1 - ((row + 0.5) / doseGridSize) * 2;
-                            const value = doseIntensityAt(normalizedX, normalizedY, time, delivered) / 1.4;
-                            markup += `<rect x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${cellSize.toFixed(2)}" height="${cellSize.toFixed(2)}" class="dose-cell" fill="${heatColor(value)}"></rect>`;
+                function buildDoseMapMarkup(doseAt) {
+                    const rasterSize = 240;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = rasterSize;
+                    canvas.height = rasterSize;
+                    const context = canvas.getContext('2d');
+                    const image = context.createImageData(rasterSize, rasterSize);
+
+                    for (let row = 0; row < rasterSize; row += 1) {
+                        for (let col = 0; col < rasterSize; col += 1) {
+                            const normalizedX = ((col + 0.5) / rasterSize) * 2 - 1;
+                            const normalizedY = 1 - ((row + 0.5) / rasterSize) * 2;
+                            const value = doseAt(normalizedX, normalizedY) / 100;
+                            const [red, green, blue] = heatColorComponents(value);
+                            const pixelIndex = (row * rasterSize + col) * 4;
+                            image.data[pixelIndex] = red;
+                            image.data[pixelIndex + 1] = green;
+                            image.data[pixelIndex + 2] = blue;
+                            image.data[pixelIndex + 3] = 255;
                         }
                     }
-                    return markup;
+
+                    context.putImageData(image, 0, 0);
+                    return `<image x="12" y="8" width="74" height="74" preserveAspectRatio="none" href="${canvas.toDataURL('image/png')}"></image>`;
                 }
 
                 function updateDoseMaps() {
-                    referenceDoseMap.innerHTML = buildDoseMapMarkup(0, false);
-                    deliveredDoseMap.innerHTML = buildDoseMapMarkup(currentTime, true);
-
-                    const markerX = 48 + lateralSignal(currentTime) * 5.4;
-                    const markerY = 45 - positionSignal(currentTime) * 5.4;
-                    doseMarker.setAttribute('cx', markerX.toFixed(2));
-                    doseMarker.setAttribute('cy', markerY.toFixed(2));
-                    doseCrosshairV.setAttribute('x1', markerX.toFixed(2));
-                    doseCrosshairV.setAttribute('x2', markerX.toFixed(2));
-                    doseCrosshairH.setAttribute('y1', markerY.toFixed(2));
-                    doseCrosshairH.setAttribute('y2', markerY.toFixed(2));
+                    const sampleXNormalized = Number(samplePositionSlider.value);
+                    const doseDiffPct = Number(doseSlider.value) * Number(comparisonDoseFactorSlider.value);
+                    const normalizationDoseAt = createNormalizationDoseSampler(sampleXNormalized, doseDiffPct);
+                    const animatedDeliveredDoseAt = createAnimatedDeliveredDoseSampler(currentTime, sampleXNormalized, doseDiffPct);
+                    referenceDoseMap.innerHTML = buildDoseMapMarkup((normalizedX, normalizedY) => normalizationDoseAt(normalizedX, normalizedY, false));
+                    deliveredDoseMap.innerHTML = buildDoseMapMarkup((normalizedX, normalizedY) => animatedDeliveredDoseAt(normalizedX, normalizedY));
                 }
 
                 function buildGrid() {
@@ -920,11 +1095,11 @@ def render_simulator() -> None:
                     `;
 
                     waveYTicks.innerHTML = `
-                        <text x="7" y="12" text-anchor="end" dominant-baseline="middle" class="tick-text">2</text>
-                        <text x="7" y="24" text-anchor="end" dominant-baseline="middle" class="tick-text">1</text>
+                        <text x="7" y="12" text-anchor="end" dominant-baseline="middle" class="tick-text">8</text>
+                        <text x="7" y="24" text-anchor="end" dominant-baseline="middle" class="tick-text">4</text>
                         <text x="7" y="36" text-anchor="end" dominant-baseline="middle" class="tick-text">0</text>
-                        <text x="7" y="48" text-anchor="end" dominant-baseline="middle" class="tick-text">-1</text>
-                        <text x="7" y="60" text-anchor="end" dominant-baseline="middle" class="tick-text">-2</text>
+                        <text x="7" y="48" text-anchor="end" dominant-baseline="middle" class="tick-text">-4</text>
+                        <text x="7" y="60" text-anchor="end" dominant-baseline="middle" class="tick-text">-8</text>
                     `;
                 }
 
@@ -1043,7 +1218,7 @@ def render_simulator() -> None:
 
                 function wavePoint(t) {
                     const x = 9 + (78 * t) / 10;
-                    const y = 36 - logFileSignal(t) * 9.5;
+                    const y = 36 - logFileSignal(t) * 3;
                     return { x, y };
                 }
 
@@ -1143,15 +1318,6 @@ def render_simulator() -> None:
                         button.classList.add('active');
                         doseSlider.value = button.dataset.dose;
                         distanceSlider.value = button.dataset.distance;
-                        updateScene();
-                    });
-                });
-
-                normalizationModes.forEach((button) => {
-                    button.addEventListener('click', () => {
-                        normalizationModes.forEach((candidate) => candidate.classList.remove('active'));
-                        button.classList.add('active');
-                        normalizationMode = button.dataset.mode;
                         updateScene();
                     });
                 });
